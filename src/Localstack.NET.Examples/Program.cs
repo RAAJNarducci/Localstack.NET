@@ -1,9 +1,15 @@
+using Amazon.DynamoDBv2;
 using Amazon.S3;
 using Amazon.SecretsManager;
+using static Localstack.NET.Examples.Extensions.JsonInputFormatterExtension;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.InputFormatters.Insert(0, GetJsonPatchInputFormatter());
+});
+builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<IAmazonS3>(provider =>
@@ -21,6 +27,14 @@ builder.Services.AddSingleton<IAmazonSecretsManager>(provider =>
     {
         UseHttp = true,
         ServiceURL = builder.Configuration["AWS:SECRET"],
+    });
+});
+builder.Services.AddSingleton<IAmazonDynamoDB>(provider =>
+{
+    return new AmazonDynamoDBClient(new AmazonDynamoDBConfig
+    {
+        UseHttp = true,
+        ServiceURL = builder.Configuration["AWS:DYNAMO"],
     });
 });
 
